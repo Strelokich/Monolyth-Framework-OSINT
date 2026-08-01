@@ -1,5 +1,4 @@
 FreeSimpleGUI>=5.1.1
-PySide6>=6.6.0
 requests>=2.31.0
 beautifulsoup4>=4.12.0
 playwright>=1.42.0
