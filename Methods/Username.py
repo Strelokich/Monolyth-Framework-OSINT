@@ -4,9 +4,11 @@ import time
 import os
 import sys
 import json
+import random
 import requests
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
 
 #раскраска
 BG          = "#0a0a14"
@@ -74,106 +76,265 @@ STATIC_SITES = [
     ("Bandcamp",    "https://bandcamp.com/{u}"),
 ]
 
+DEFAULT_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/119.0.0.0 Safari/537.36"
+)
+
 DEFAULT_HEADERS = {
-    'User-Agent': (
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-        'AppleWebKit/537.36 (KHTML, like Gecko) '
-        'Chrome/119.0.0.0'
-    )
+    "User-Agent": DEFAULT_USER_AGENT
 }
 
 
-#   логика сканирования
-def check_url(name, url, window):
+def load_user_agents(path):
+    """Load one User-Agent per line from a local TXT file."""
+    if not path:
+        return [DEFAULT_USER_AGENT]
+
     try:
-        r = requests.get(url, headers=DEFAULT_HEADERS, timeout=8, allow_redirects=True)
-        if r.status_code == 200:
-            return (name, url, True)
-        return (name, url, False)
+        ua_path = Path(path)
+        if not ua_path.exists():
+            return [DEFAULT_USER_AGENT]
+
+        with ua_path.open("r", encoding="utf-8", errors="ignore") as f:
+            agents = [
+                line.strip()
+                for line in f
+                if line.strip() and not line.lstrip().startswith("#")
+            ]
+
+        return agents or [DEFAULT_USER_AGENT]
     except Exception:
-        return (name, url, None)  # None = error/timeout
+        return [DEFAULT_USER_AGENT]
 
 
-def run_scan(username, window, data_json_path=None, wmn_json_path=None):
+def random_headers(user_agents, extra_headers=None):
+    """Build request headers with a random User-Agent for this request."""
+    headers = dict(extra_headers or {})
+    headers["User-Agent"] = random.choice(user_agents or [DEFAULT_USER_AGENT])
+    return headers
+
+
+def post_ui(window, action, **payload):
+    """Thread-safe communication from workers to the GUI event loop."""
+    try:
+        window.write_event_value("-WORKER-EVENT-", (action, payload))
+    except Exception:
+        # Window may already be closed.
+        pass
+
+
+
+#   логика сканирования
+def check_url(name, url, user_agents):
+    if _stop_flag.is_set():
+        return (name, url, None, "stopped")
+
+    try:
+        r = requests.get(
+            url,
+            headers=random_headers(user_agents),
+            timeout=8,
+            allow_redirects=True,
+        )
+        if r.status_code == 200:
+            return (name, url, True, None)
+        return (name, url, False, None)
+    except Exception as e:
+        return (name, url, None, str(e))
+
+
+def run_scan(username, window, data_json_path=None, wmn_json_path=None,
+             user_agents_path=None):
     found = []
     errors = 0
     checked = 0
     total = len(STATIC_SITES)
+    user_agents = load_user_agents(user_agents_path)
 
-    _log(window, f"TARGET  >>>  {username}", ACCENT3)
-    _log(window, f"Platforms in static list: {total}", TEXT_DIM)
-    _log(window, "─" * 54, BORDER)
+    post_ui(window, "log", msg=f"TARGET  >>>  {username}", color=ACCENT3)
+    post_ui(window, "log", msg=f"Platforms in static list: {total}", color=TEXT_DIM)
+    post_ui(
+        window,
+        "log",
+        msg=f"User-Agents loaded: {len(user_agents)}"
+            + (f" from {user_agents_path}" if user_agents_path else " (fallback)"),
+        color=TEXT_DIM,
+    )
+    post_ui(window, "log", msg="─" * 54, color=BORDER)
+    post_ui(window, "progress_reset", total=total)
+    post_ui(window, "status", text="SCANNING...", color=WARN)
 
-    window["-PROGRESS-"].update(0, max=total)
-    window["-STATUS-"].update("SCANNING...", text_color=WARN)
-
-    def check_and_report(args):
-        nonlocal checked, errors
-        name, tpl = args
+    def check_static(item):
+        name, tpl = item
+        if _stop_flag.is_set():
+            return None
         url = tpl.replace("{u}", username)
-        result = check_url(name, url, window)
-        checked += 1
-        pct = int(checked / total * 100)
-        window["-PROGRESS-"].update(checked)
-        window["-PCT-"].update(f"{pct}%")
-        if result[2] is True:
-            found.append((name, url))
-            window["-LOG-"].print(f"  ◈  FOUND   {name:<14} {url}",
-                                  text_color=SUCCESS, end="\n")
-        elif result[2] is None:
-            errors += 1
+        return check_url(name, url, user_agents)
 
-    with ThreadPoolExecutor(max_workers=THREADS) as ex:
-        list(ex.map(check_and_report, STATIC_SITES))
+    executor = ThreadPoolExecutor(max_workers=THREADS)
+    futures = [executor.submit(check_static, item) for item in STATIC_SITES]
 
-    _log(window, "─" * 54, BORDER)
-    _log(window, f"Scan complete. Found: {len(found)}  |  Errors: {errors}", ACCENT3)
+    try:
+        for future in as_completed(futures):
+            if _stop_flag.is_set():
+                break
 
-    # ── optional: DataJson scan ──
-    if data_json_path and os.path.exists(data_json_path):
-        _log(window, f"Loading data.json: {data_json_path}", TEXT_DIM)
+            result = future.result()
+            if result is None:
+                continue
+
+            name, url, state, error = result
+            checked += 1
+            pct = int(checked / total * 100)
+            post_ui(window, "progress", value=checked, total=total, pct=pct)
+
+            if state is True:
+                found.append((name, url))
+                post_ui(
+                    window,
+                    "raw_log",
+                    msg=f"  ◈  FOUND   {name:<14} {url}",
+                    color=SUCCESS,
+                )
+            elif state is None and error != "stopped":
+                errors += 1
+    finally:
+        if _stop_flag.is_set():
+            for future in futures:
+                future.cancel()
+        executor.shutdown(wait=False, cancel_futures=True)
+
+    if _stop_flag.is_set():
+        post_ui(window, "log", msg="Scan stopped by user.", color=WARN)
+        post_ui(window, "status", text="STOPPED", color=WARN)
+        post_ui(window, "scan_finished")
+        return
+
+    post_ui(window, "log", msg="─" * 54, color=BORDER)
+    post_ui(
+        window,
+        "log",
+        msg=f"Scan complete. Found: {len(found)}  |  Errors: {errors}",
+        color=ACCENT3,
+    )
+
+    # optional: DataJson scan
+    if data_json_path and os.path.exists(data_json_path) and not _stop_flag.is_set():
+        post_ui(
+            window,
+            "log",
+            msg=f"Loading data.json: {data_json_path}",
+            color=TEXT_DIM,
+        )
         try:
-            with open(data_json_path, 'r', encoding='utf-8') as f:
+            with open(data_json_path, "r", encoding="utf-8") as f:
                 targets = json.load(f)
-                targets.pop('$schema', None)
-            _log(window, f"data.json sites: {len(targets)}", TEXT_DIM)
-            session = requests.Session()
-            session.headers.update(DEFAULT_HEADERS)
+                targets.pop("$schema", None)
+
+            post_ui(
+                window,
+                "log",
+                msg=f"data.json sites: {len(targets)}",
+                color=TEXT_DIM,
+            )
+
             dj_found = 0
 
             def check_dj(item):
-                nonlocal dj_found
+                if _stop_flag.is_set():
+                    return None
+
                 site_name, site_data = item
-                url = site_data['url'].format(username)
-                error_type = site_data.get('errorType')
+                url = site_data["url"].format(username)
+                error_type = site_data.get("errorType")
+
+                # Preserve site-specific headers, but choose a fresh UA per request.
+                headers = random_headers(
+                    user_agents,
+                    extra_headers=site_data.get("headers", {}),
+                )
+
                 try:
-                    r = session.get(url, headers=site_data.get('headers', {}),
-                                    timeout=8, allow_redirects=True)
+                    r = requests.get(
+                        url,
+                        headers=headers,
+                        timeout=8,
+                        allow_redirects=True,
+                    )
                 except Exception:
-                    return
+                    return None
+
                 is_found = False
-                if error_type == 'status_code':
+                if error_type == "status_code":
                     is_found = r.status_code == 200
-                elif error_type == 'message':
-                    msgs = site_data.get('errorMsg', [])
-                    if isinstance(msgs, str): msgs = [msgs]
+                elif error_type == "message":
+                    msgs = site_data.get("errorMsg", [])
+                    if isinstance(msgs, str):
+                        msgs = [msgs]
                     is_found = not any(m in r.text for m in msgs)
-                elif error_type == 'response_url':
-                    is_found = r.url != site_data.get('errorUrl')
+                elif error_type == "response_url":
+                    is_found = r.url != site_data.get("errorUrl")
+
                 if is_found:
-                    dj_found += 1
-                    window["-LOG-"].print(f"  ◈  [DJ]    {site_name:<14} {url}",
-                                          text_color=ACCENT3, end="\n")
+                    return (site_name, url)
+                return None
 
-            with ThreadPoolExecutor(max_workers=THREADS) as ex:
-                list(ex.map(check_dj, targets.items()))
-            _log(window, f"data.json: {dj_found} accounts found", ACCENT3)
+            dj_executor = ThreadPoolExecutor(max_workers=THREADS)
+            dj_futures = [
+                dj_executor.submit(check_dj, item)
+                for item in targets.items()
+            ]
+
+            try:
+                for future in as_completed(dj_futures):
+                    if _stop_flag.is_set():
+                        break
+
+                    result = future.result()
+                    if result:
+                        dj_found += 1
+                        site_name, url = result
+                        post_ui(
+                            window,
+                            "raw_log",
+                            msg=f"  ◈  [DJ]    {site_name:<14} {url}",
+                            color=ACCENT3,
+                        )
+            finally:
+                if _stop_flag.is_set():
+                    for future in dj_futures:
+                        future.cancel()
+                dj_executor.shutdown(wait=False, cancel_futures=True)
+
+            if not _stop_flag.is_set():
+                post_ui(
+                    window,
+                    "log",
+                    msg=f"data.json: {dj_found} accounts found",
+                    color=ACCENT3,
+                )
+
         except Exception as e:
-            _log(window, f"data.json error: {e}", DANGER)
+            post_ui(window, "log", msg=f"data.json error: {e}", color=DANGER)
 
-    # сохранить логи 
+    if _stop_flag.is_set():
+        post_ui(window, "log", msg="Scan stopped by user.", color=WARN)
+        post_ui(window, "status", text="STOPPED", color=WARN)
+        post_ui(window, "scan_finished")
+        return
+
+    # save logs
     folder_path.mkdir(parents=True, exist_ok=True)
-    log_file = folder_path / f"username_{username}_{time.strftime('%Y%m%d_%H%M%S')}.txt"
+    safe_username = "".join(
+        ch for ch in username if ch.isalnum() or ch in ("-", "_", ".")
+    ) or "unknown"
+    log_file = (
+        folder_path
+        / f"username_{safe_username}_{time.strftime('%Y%m%d_%H%M%S')}.txt"
+    )
+
     try:
         with open(log_file, "w", encoding="utf-8") as f:
             f.write(f"MONOLYTH USERNAME RECON — {username}\n")
@@ -183,14 +344,18 @@ def run_scan(username, window, data_json_path=None, wmn_json_path=None):
                     f.write(f"[FOUND] {name}: {url}\n")
             else:
                 f.write("No accounts found in static list.\n")
-        _log(window, f"Report saved: {log_file}", TEXT_DIM)
+
+        post_ui(
+            window,
+            "log",
+            msg=f"Report saved: {log_file}",
+            color=TEXT_DIM,
+        )
     except Exception as e:
-        _log(window, f"Save error: {e}", DANGER)
+        post_ui(window, "log", msg=f"Save error: {e}", color=DANGER)
 
-    window["-STATUS-"].update("IDLE", text_color=SUCCESS)
-    window["-SCAN-BTN-"].update(disabled=False)
-    window["-STOP-BTN-"].update(disabled=True)
-
+    post_ui(window, "status", text="IDLE", color=SUCCESS)
+    post_ui(window, "scan_finished")
 
 
 #   помощ лог
@@ -250,6 +415,20 @@ def build_layout():
             sg.FileBrowse("…", font=FONT_MONO_S,
                           button_color=(TEXT_DIM, BORDER),
                           file_types=(("JSON", "*.json"),), pad=(2, 4)),
+        ],
+        [
+            sg.Text("useragents :", font=FONT_MONO_S, text_color=TEXT_DIM,
+                    background_color=PANEL),
+            sg.Input("resources/useragents.txt", key="-UA-PATH-", font=FONT_MONO_S,
+                     size=(30, 1), background_color=BG2, text_color=TEXT_DIM,
+                     border_width=1, pad=((4, 6), 4)),
+            sg.FileBrowse("…", font=FONT_MONO_S,
+                          button_color=(TEXT_DIM, BORDER),
+                          file_types=(("Text", "*.txt"), ("All", "*.*")),
+                          pad=(2, 4)),
+            sg.Text("one User-Agent per line", font=FONT_MONO_S,
+                    text_color=TEXT_DIM, background_color=PANEL,
+                    pad=((12, 4), 4)),
         ],
     ], font=FONT_LABEL, title_color=ACCENT2, background_color=PANEL,
        border_width=1, relief=sg.RELIEF_FLAT, expand_x=True, pad=(0, 4))
@@ -359,6 +538,43 @@ def main():
         if event in (sg.WIN_CLOSED, "-EXIT-"):
             break
 
+        if event == "-WORKER-EVENT-":
+            action, payload = values["-WORKER-EVENT-"]
+
+            if action == "log":
+                _log(window, payload["msg"], payload.get("color"))
+
+            elif action == "raw_log":
+                window["-LOG-"].print(
+                    payload["msg"],
+                    text_color=payload.get("color") or TEXT,
+                    end="\n",
+                )
+
+            elif action == "progress_reset":
+                total = payload["total"]
+                window["-PROGRESS-"].update(0, max=total)
+                window["-PCT-"].update("0%")
+
+            elif action == "progress":
+                window["-PROGRESS-"].update(
+                    payload["value"],
+                    max=payload["total"],
+                )
+                window["-PCT-"].update(f'{payload["pct"]}%')
+
+            elif action == "status":
+                window["-STATUS-"].update(
+                    payload["text"],
+                    text_color=payload["color"],
+                )
+
+            elif action == "scan_finished":
+                window["-SCAN-BTN-"].update(disabled=False)
+                window["-STOP-BTN-"].update(disabled=True)
+
+            continue
+
         elif event == "-SCAN-BTN-":
             username = values["-USERNAME-"].strip()
             if not username:
@@ -366,6 +582,7 @@ def main():
                 continue
             data_p = values["-DATA-PATH-"].strip() or None
             wmn_p  = values["-WMN-PATH-"].strip() or None
+            ua_p   = values["-UA-PATH-"].strip() or None
             _stop_flag.clear()
             window["-SCAN-BTN-"].update(disabled=True)
             window["-STOP-BTN-"].update(disabled=False)
@@ -375,7 +592,7 @@ def main():
             _log(window, f"INITIATING SCAN  >>>  {username}", ACCENT3)
             _scan_thread = threading.Thread(
                 target=run_scan,
-                args=(username, window, data_p, wmn_p),
+                args=(username, window, data_p, wmn_p, ua_p),
                 daemon=True,
             )
             _scan_thread.start()

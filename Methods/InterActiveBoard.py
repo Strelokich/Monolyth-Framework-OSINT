@@ -171,17 +171,44 @@ class Board:
         self._ctx_x = self._ctx_y = 0
 
     def _btn(self, parent, text, cmd, color, key=None):
-        b = tk.Button(parent, text=text, command=cmd,
-                      bg=color, fg=TEXT_BRIGHT, relief="flat",
-                      font=("Courier New", 8, "bold"), padx=10, pady=6,
-                      cursor="hand2", activebackground=BG2,
-                      activeforeground=TEXT_BRIGHT, bd=0)
-        b.pack(side="left", padx=2, pady=4)
+        """Modern flat toolbar button with a subtle hover effect."""
+        b = tk.Label(
+            parent,
+            text=text,
+            bg=color,
+            fg=TEXT_BRIGHT,
+            font=("Courier New", 8, "bold"),
+            padx=12,
+            pady=6,
+            cursor="hand2"
+        )
+
+        def on_enter(event):
+            b.config(bg=BG2)
+
+        def on_leave(event):
+            # Keep CONNECT visually active while connect mode is enabled.
+            if key == "connect_btn" and self.connect_mode:
+                b.config(bg=DANGER)
+            else:
+                b.config(bg=color)
+
+        b.bind("<Button-1>", lambda event: cmd())
+        b.bind("<Enter>", on_enter)
+        b.bind("<Leave>", on_leave)
+        b.pack(side="left", padx=3, pady=4)
+
         if key:
             setattr(self, key, b)
+
         return b
 
+    def _on_motion(self, event):
+        cx, cy = self._canvas_coords(event)
+        self.hover_node = self._node_at(cx, cy)
+        self._redraw()
     #events
+
     def _bind_events(self):
         c = self.canvas
         c.bind("<ButtonPress-1>",   self._on_lclick)
@@ -198,7 +225,21 @@ class Board:
         c.bind("<Escape>",          self._cancel_connect)
         self.root.bind("<Control-z>", lambda e: None)
         self.root.bind("<Control-a>", lambda e: self._select_all())
+        self.canvas.bind("<Motion>", self._on_motion)
+        self.root.bind("<KeyPress-w>", lambda e: self.canvas.yview_scroll(-1, "units"))
+        self.root.bind("<KeyPress-s>", lambda e: self.canvas.yview_scroll(1, "units"))
+        self.root.bind("<KeyPress-a>", lambda e: self.canvas.xview_scroll(-1, "units"))
+        self.root.bind("<KeyPress-d>", lambda e: self.canvas.xview_scroll(1, "units"))
+        self.canvas.bind("<Double-1>", self._on_dblclick)
         c.focus_set()
+
+    def _on_dblclick(self, event):
+        cx, cy = self._canvas_coords(event)
+        nid = self._node_at(cx, cy)
+        if nid:
+            self._rename_node(nid)
+        else:
+            self._open_add_dialog(cx, cy)
 
     def _canvas_coords(self, event):
         return (self.canvas.canvasx(event.x),
@@ -207,6 +248,11 @@ class Board:
     def _on_lclick(self, event):
         cx, cy = self._canvas_coords(event)
         nid = self._node_at(cx, cy)
+        # Shift = панорамирование
+        if event.state & 0x0001:
+            self.canvas.scan_mark(event.x, event.y)
+            self.drag_data = {"pan": True}
+            return
 
         if self.connect_mode:
             if nid:
@@ -239,6 +285,9 @@ class Board:
 
     def _on_drag(self, event):
         if not self.drag_data:
+            return
+        if self.drag_data.get("pan"):
+            self.canvas.scan_dragto(event.x, event.y, gain=1)
             return
         cx, cy = self._canvas_coords(event)
         dx = cx - self.drag_data["x"]
@@ -298,20 +347,28 @@ class Board:
             self.selected = {nid}
             self._redraw()
         self.ctx_menu.tk_popup(event.x_root, event.y_root)
-    def _on_dblclick(self, event):
-        cx, cy = self._canvas_coords(event)
-        nid = self._node_at(cx, cy)
-        if nid:
-            self._rename_node(nid)
+
     def _on_zoom(self, event):
+        old_z = self.zoom_var.get()
         if hasattr(event, "delta") and event.delta:
             factor = 1.1 if event.delta > 0 else 0.9
         else:
             factor = 1.1 if event.num == 4 else 0.9
-        z = max(0.2, min(3.0, self.zoom_var.get() * factor))
-        self.zoom_var.set(z)
-        self.zoom_label.config(text=f"{int(z*100)}%")
+
+        new_z = max(0.2, min(3.0, old_z * factor))
+
+        cx = self.canvas.canvasx(event.x)
+        cy = self.canvas.canvasy(event.y)
+
+        self.zoom_var.set(new_z)
+        self.zoom_label.config(text=f"{int(new_z*100)}%")
+
         self._redraw()
+
+        self.canvas.xview_moveto((cx * new_z / old_z) / CANVAS_W)
+        self.canvas.yview_moveto((cy * new_z / old_z) / CANVAS_H)
+
+
     def _pan_start(self, event):
         self.canvas.scan_mark(event.x, event.y)
     def _pan_move(self, event):
@@ -461,6 +518,7 @@ class Board:
             dlg.destroy()
 
         le.bind("<Return>", _ok)
+        dlg.bind("<Escape>", lambda e: dlg.destroy())
 
         tk.Button(dlg, text="  ADD  ", command=_ok,
                   bg=ACCENT1, fg=TEXT_BRIGHT, relief="flat",
@@ -542,86 +600,151 @@ class Board:
         self.canvas.delete("node", "edge", "tmp", "selrect")
         z = self.zoom_var.get()
 
-        #edges first
+        # Edges first so nodes stay visually on top.
         for eid, e in self.edges.items():
             src = self.nodes.get(e["src"])
             dst = self.nodes.get(e["dst"])
             if not src or not dst:
                 continue
-            sx, sy = src["x"]*z, src["y"]*z
-            dx, dy = dst["x"]*z, dst["y"]*z
 
-            #curved line
-            mx = (sx+dx)/2 + (dy-sy)*0.15
-            my = (sy+dy)/2 + (sx-dx)*0.15
+            sx, sy = src["x"] * z, src["y"] * z
+            dx, dy = dst["x"] * z, dst["y"] * z
+
+            mx = (sx + dx) / 2 + (dy - sy) * 0.15
+            my = (sy + dy) / 2 + (sx - dx) * 0.15
 
             self.canvas.create_line(
                 sx, sy, mx, my, dx, dy,
-                smooth=True, fill=BORDER, width=max(1, int(1.5*z)),
-                arrow="last", arrowshape=(8*z, 10*z, 3*z),
-                tags="edge")
+                smooth=True,
+                fill=BORDER,
+                width=max(1, int(1.5 * z)),
+                arrow="last",
+                arrowshape=(8 * z, 10 * z, 3 * z),
+                tags="edge"
+            )
 
             if e.get("label"):
                 self.canvas.create_text(
-                    (sx+dx)/2, (sy+dy)/2,
-                    text=e["label"], fill=TEXT_DIM,
-                    font=("Courier New", max(7, int(7*z))), tags="edge")
+                    (sx + dx) / 2,
+                    (sy + dy) / 2,
+                    text=e["label"],
+                    fill=TEXT_DIM,
+                    font=("Courier New", max(7, int(7 * z))),
+                    tags="edge"
+                )
 
-        #nodes
-        hw = NODE_W*z/2
-        hh = NODE_H*z/2
+        hw = NODE_W * z / 2
+        hh = NODE_H * z / 2
 
+        # Nodes.
         for nid, n in self.nodes.items():
-            nx, ny = n["x"]*z, n["y"]*z
+            nx, ny = n["x"] * z, n["y"] * z
             cfg = NODE_TYPES.get(n["type"], NODE_TYPES["NOTE"])
 
             is_sel = nid in self.selected
             is_hit = nid in self.search_highlights
             is_src = nid == self.connect_src
+            is_hover = nid == getattr(self, "hover_node", None)
 
-            #outer glow ring
+            # Soft shadow. Tkinter does not support 8-digit alpha HEX colors.
+            self.canvas.create_rectangle(
+                nx - hw + 3,
+                ny - hh + 3,
+                nx + hw + 3,
+                ny + hh + 3,
+                fill="#050510",
+                outline="",
+                tags="node"
+            )
+
+            # Selection / connection ring.
             if is_sel or is_src:
                 ring_color = WARN if is_src else ACCENT3
                 self.canvas.create_rectangle(
-                    nx-hw-3, ny-hh-3, nx+hw+3, ny+hh+3,
-                    outline=ring_color, width=max(1,int(2*z)),
-                    fill="", tags="node")
+                    nx - hw - 3,
+                    ny - hh - 3,
+                    nx + hw + 3,
+                    ny + hh + 3,
+                    outline=ring_color,
+                    width=max(1, int(2 * z)),
+                    fill="",
+                    tags="node"
+                )
+
+            # Search result highlight.
             if is_hit:
                 self.canvas.create_rectangle(
-                    nx-hw-5, ny-hh-5, nx+hw+5, ny+hh+5,
-                    outline=WARN, width=1, fill="", dash=(4,3), tags="node")
+                    nx - hw - 5,
+                    ny - hh - 5,
+                    nx + hw + 5,
+                    ny + hh + 5,
+                    outline=WARN,
+                    width=1,
+                    fill="",
+                    dash=(4, 3),
+                    tags="node"
+                )
 
-            #node body
+            # Hover highlight.
+            if is_hover and not is_sel:
+                self.canvas.create_rectangle(
+                    nx - hw - 2,
+                    ny - hh - 2,
+                    nx + hw + 2,
+                    ny + hh + 2,
+                    outline=ACCENT1,
+                    width=max(1, int(z)),
+                    fill="",
+                    tags="node"
+                )
+
+            # Node body.
             self.canvas.create_rectangle(
-                nx-hw, ny-hh, nx+hw, ny+hh,
+                nx - hw,
+                ny - hh,
+                nx + hw,
+                ny + hh,
                 fill=cfg["body"],
                 outline=cfg["border"],
-                width=max(1, int(1.5*z)),
-                tags="node")
+                width=max(1, int(1.5 * z)),
+                tags="node"
+            )
 
-            #type icon + strip
-            icon_w = max(18, int(22*z))
+            # Type strip and icon.
+            icon_w = max(18, int(22 * z))
             self.canvas.create_rectangle(
-                nx-hw, ny-hh, nx-hw+icon_w, ny+hh,
-                fill=cfg["strip"], outline="", tags="node")
+                nx - hw,
+                ny - hh,
+                nx - hw + icon_w,
+                ny + hh,
+                fill=cfg["strip"],
+                outline="",
+                tags="node"
+            )
             self.canvas.create_text(
-                nx-hw+icon_w//2, ny,
+                nx - hw + icon_w // 2,
+                ny,
                 text=cfg["icon"],
                 fill=cfg["border"],
-                font=("Courier New", max(8, int(9*z)), "bold"),
-                tags="node")
+                font=("Courier New", max(8, int(9 * z)), "bold"),
+                tags="node"
+            )
 
-            #label
+            # Label.
             max_chars = max(8, int(14 / max(0.5, z)))
             lbl = n["label"]
             if len(lbl) > max_chars:
-                lbl = lbl[:max_chars-1] + "…"
+                lbl = lbl[:max_chars - 1] + "…"
+
             self.canvas.create_text(
-                nx - hw + icon_w + 4, ny,
-                text=lbl, anchor="w",
+                nx - hw + icon_w + 6,
+                ny,
+                text=lbl,
+                anchor="w",
                 fill=TEXT_BRIGHT,
-                font=("Courier New", max(7, int(9*z)), "bold"),
-                tags="node")
+                font=("Courier New", max(7, int(9 * z)), "bold"),
+                tags="node"
+            )
 
     #layout
     def _auto_layout(self):
