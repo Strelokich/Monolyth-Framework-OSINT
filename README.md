@@ -10,7 +10,6 @@
 | 01 | Локальные базы | Methods/db.py - Поиск по CSV/XLSX файлам в выбранной директории 
 | 02 | IP/Домен | Methods/Ip.py - Reverse DNS, WHOIS, гео-локация 
 | 03 | Email | Methods/mail.py - Валидация почты, сопутствующий поиск 
-| 04 | MDWE | Methods/mdwe.py - Извлечение метаданных и сущностей со страниц (использует Playwright) 
 | 05 | Телефон | Methods/phone_number.py - Оператор, регион, часовой пояс номера 
 | 06 | Username | Methods/Username.py - Поиск ника на множестве платформ (использует базу как в Sherlock/WhatsMyName) 
 | 07 | Поисковый движок | Methods/Search_engine.py - Быстрый доступ к поисковым дорками и внешним OSINT-сервисам 
@@ -31,7 +30,6 @@
   # Arch
   sudo pacman -S tk
   ```
-- Для модуля MDWE потребуется браузер Chromium, устанавливаемый через Playwright (см. установку ниже делается автоматически).
 
 ## Установка
 
@@ -62,7 +60,6 @@ python3 -m venv .venv
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install --upgrade pip
 pip install -r requirements.txt
-python -m playwright install chromium   # нужно для модуля MDWE
 python OSINT.py
 ```
 
@@ -79,11 +76,10 @@ python OSINT.py
     ├── db.py                 # Модуль 01
     ├── Ip.py                 # Модуль 02
     ├── mail.py                # Модуль 03
-    ├── mdwe.py                # Модуль 04
-    ├── phone_number.py        # Модуль 05
-    ├── Username.py            # Модуль 06
-    ├── Search_engine.py       # Модуль 07
-    ├── InterActiveBoard.py    # Модуль 08
+    ├── phone_number.py        # Модуль 04
+    ├── Username.py            # Модуль 05
+    ├── Search_engine.py       # Модуль 06
+    ├── InterActiveBoard.py    # Модуль 07
     ├── ua.txt                 # Список User-Agent
     ├── proxies_http.txt       # Список HTTP-прокси(опционально)
     ├── Logs/                  # Логи/результаты работы модулей(создаётся автоматически)
@@ -116,15 +112,10 @@ git remote add origin <URL_вашего_репозитория_на_GitHub>
 git push -u origin main
 ```
 
-Файлы .gitignore и .gitattributes уже настроены так, чтобы:
-не попадали в репозиторий виртуальные окружения, кэши, __pycache__, логи из Methods/Logs/;
-пользовательские CSV/XLSX базы (используемые модулем db.py) не коммитились по умолчанию;
-переводы строк корректно нормализовались между Windows и Unix системами.
 
 ## Возможные проблемы
 
 - 1. **ModuleNotFoundError: No module named 'FreeSimpleGUI'** не активировано виртуальное окружение или не выполнен pip install -r requirements.txt.
-- 2. **Playwright не запускает браузер** выполните python -m playwright install chromium внутри активированного .venv.
 - 3. **Модуль Interactive Board не открывается на Linux**  установите системный пакет python3-tk (см. раздел «Требования»).
 - 4. **Антивирус блокирует запуск на Windows**  некоторые антивирусы настороженно относятся к OSINT-инструментам с сетевыми функциями; добавьте папку проекта в исключения при необходимости.
 
