@@ -11,11 +11,10 @@ A desktop GUI tool for OSINT (Open Source Intelligence) reconnaissance: IP/domai
 | 01 | Local Databases | `Methods/db.py` | Search CSV/XLSX files in a chosen directory |
 | 02 | IP / Domain | `Methods/Ip.py` | Reverse DNS, WHOIS, geolocation |
 | 03 | Email | `Methods/mail.py` | Email validation, related search |
-| 04 | MDWE | `Methods/mdwe.py` | Metadata and entity extraction from web pages (uses Playwright) |
-| 05 | Phone | `Methods/phone_number.py` | Carrier, region, timezone lookup |
-| 06 | Username | `Methods/Username.py` | Username search across multiple platforms (uses a Sherlock/WhatsMyName-style database) |
-| 07 | Search Engine | `Methods/Search_engine.py` | Quick access to search dorks and external OSINT services |
-| 08 | Interactive Board | `Methods/InterActiveBoard.py` | Link-analysis board for visualizing an investigation (Tkinter) |
+| 04 | Phone | `Methods/phone_number.py` | Carrier, region, timezone lookup |
+| 05 | Username | `Methods/Username.py` | Username search across multiple platforms (uses a Sherlock/WhatsMyName-style database) |
+| 06 | Search Engine | `Methods/Search_engine.py` | Quick access to search dorks and external OSINT services |
+| 07 | Interactive Board | `Methods/InterActiveBoard.py` | Link-analysis board for visualizing an investigation (Tkinter) |
 
 Plus a quick-links panel to external web tools (ZoomEye, DNSDumpster, Google Dig, etc.).
 
@@ -32,7 +31,6 @@ Plus a quick-links panel to external web tools (ZoomEye, DNSDumpster, Google Dig
   # Arch
   sudo pacman -S tk
   ```
-- The MDWE module requires a Chromium browser, installed via Playwright (see installation below — done automatically).
 
 ## Installation
 
@@ -63,7 +61,6 @@ python3 -m venv .venv
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install --upgrade pip
 pip install -r requirements.txt
-python -m playwright install chromium   # required for the MDWE module
 python OSINT.py
 ```
 
@@ -80,11 +77,10 @@ python OSINT.py
     ├── db.py                 # Module 01
     ├── Ip.py                 # Module 02
     ├── mail.py                # Module 03
-    ├── mdwe.py                # Module 04
-    ├── phone_number.py        # Module 05
-    ├── Username.py            # Module 06
-    ├── Search_engine.py       # Module 07
-    ├── InterActiveBoard.py    # Module 08
+    ├── phone_number.py        # Module 04
+    ├── Username.py            # Module 05
+    ├── Search_engine.py       # Module 06
+    ├── InterActiveBoard.py    # Module 07
     ├── ua.txt                 # User-Agent list
     ├── proxies_http.txt       # HTTP proxy list (optional)
     ├── Logs/                  # Module run logs/results (created automatically)
@@ -125,10 +121,6 @@ The `.gitignore` and `.gitattributes` files are already configured so that:
 ## Troubleshooting
 
 - **`ModuleNotFoundError: No module named 'FreeSimpleGUI'`** — the virtual environment isn't activated, or `pip install -r requirements.txt` hasn't been run.
-- **Playwright doesn't launch the browser** — run `python -m playwright install chromium` inside the activated `.venv`.
 - **The Interactive Board module won't open on Linux** — install the `python3-tk` system package (see the Requirements section).
 - **Antivirus blocks the app on Windows** — some antivirus software flags OSINT tools with networking features; add the project folder to exclusions if needed.
 
-## License
-
-This project is distributed under the [MIT License](LICENSE). Replace the `LICENSE` file with a license of your choice before publishing, if needed.
