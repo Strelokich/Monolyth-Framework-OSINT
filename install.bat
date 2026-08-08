@@ -24,8 +24,6 @@ python -m pip install --upgrade pip
 echo ==^> Устанавливаю зависимости из requirements.txt...
 pip install -r requirements.txt
 
-echo ==^> Устанавливаю браузер для модуля MDWE ^(Playwright/Chromium^)...
-python -m playwright install chromium
 
 echo.
 echo Установка завершена.
