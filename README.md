@@ -14,6 +14,7 @@
 | 06 | Username | Methods/Username.py - Поиск ника на множестве платформ (использует базу как в Sherlock/WhatsMyName) 
 | 07 | Поисковый движок | Methods/Search_engine.py - Быстрый доступ к поисковым дорками и внешним OSINT-сервисам 
 | 08 | Interactive Board | Methods/InterActiveBoard.py - Доска связей для визуализации расследования 
+| 09 | Интегрированый мною модуль для гео осинта Netryx Vision(код не мой но я буду в будущем его модифицировать по надобности моего проэкта)
 
 Плюс панель быстрых ссылок на внешние веб-инструменты (ZoomEye, DNSDumpster, Google Dig и т.д.).
 
@@ -63,31 +64,7 @@ pip install -r requirements.txt
 python OSINT.py
 ```
 
-## Структура проекта
 
-```
-.
-├── OSINT.py                  # Главное окно/лаунчер всех модулей
-├── requirements.txt
-├── install.sh / install.bat  # Скрипты установки
-├── run.sh / run.bat          # Скрипты запуска
-├── LICENSE
-└── Methods/
-    ├── db.py                 # Модуль 01
-    ├── Ip.py                 # Модуль 02
-    ├── mail.py                # Модуль 03
-    ├── phone_number.py        # Модуль 04
-    ├── Username.py            # Модуль 05
-    ├── Search_engine.py       # Модуль 06
-    ├── InterActiveBoard.py    # Модуль 07
-    ├── ua.txt                 # Список User-Agent
-    ├── proxies_http.txt       # Список HTTP-прокси(опционально)
-    ├── Logs/                  # Логи/результаты работы модулей(создаётся автоматически)
-    └── resources/
-        ├── data.json          # База сайтов для поиска по username
-        ├── data.schema.json   # Схема для data.json
-        └── wmn.json           # Дополнительная база(WhatsMyName-подобная)
-```
 
 ## Запуск отдельного модуля
 
@@ -96,20 +73,6 @@ python OSINT.py
 ```bash
 source .venv/bin/activate
 python Methods/Ip.py
-```
-
-## Публикация на GitHub
-
-Репозиторий уже готов к публикации:
-
-```bash
-cd <папка_проекта>
-git init
-git add .
-git commit -m "Initial commit: Monolyth OSINT"
-git branch -M main
-git remote add origin <URL_вашего_репозитория_на_GitHub>
-git push -u origin main
 ```
 
 
