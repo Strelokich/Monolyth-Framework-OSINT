@@ -61,7 +61,8 @@ MODULES = [
     ("04", "PHONE LOOKUP",       "phone_number.py",   "Carrier, region, social footprint"),
     ("05", "USERNAME HUNT",      "Username.py",       "Cross-platform username discovery"),
     ("06", "SEARCH_ENGINE",      "Search_engine.py",  "Universal search engine for osint"),
-    ("07", "Interactive Board beta",   "InterActiveBoard.py",   " Ineractive board for Investigation")
+    ("07", "Interactive Board beta",   "InterActiveBoard.py",   " Ineractive board for Investigation"),
+    ("08", "Geo Osint",    "Netryx.py",    "GeoOsint engine ")
 ]
 
 WEB_TOOLS = [
@@ -236,85 +237,7 @@ def sha256_file(path: Path) -> str:
 
     return digest.hexdigest()
 
-def check_module(window):
 
-    KEY = b"5QSKPN-YJWW3NIe5kPmOnTOxw8RYM_UHFoj3QbiEW7o="
-
-    def sha256_file(path: Path) -> str:                # function connected to verify_module
-        h = hashlib.sha256()
-
-        with path.open("rb") as f:
-            for chunk in iter(lambda: f.read(1024 * 1024), b""):
-                h.update(chunk)
-
-        return h.hexdigest()
-
-    def load_manifest_from_memory(path: Path):
-        try:
-            fernet = Fernet(KEY)
-
-            # reading encrypted file
-            encrypted_data = path.read_bytes()
-
-            # decrypting file in memory(not hardware)
-            decrypted_data = fernet.decrypt(encrypted_data)
-
-            # JSON also returning into memory
-            manifest = json.loads(decrypted_data.decode("utf-8"))
-
-            return manifest
-
-        except FileNotFoundError:
-            print(f"Manifest not found: {path}")
-            return None
-
-        except InvalidToken:
-            print("Manifest is corrupted or key is incorrect")
-            return None
-
-        except json.JSONDecodeError:
-            print("Decrypted manifest is not valid JSON")
-            return None
-
-    def verify_module(window, module_dir: Path, module_manifest: dict):
-        for filename, info in module_manifest.items():
-            path = module_dir / filename
-
-            if not path.is_file():
-                log(window, f"File not found: {filename}")
-                return False
-
-            expected_size = info["size"]
-            actual_size = path.stat().st_size
-
-            if actual_size != expected_size:
-                return False
-
-            expected_hash = info["sha256"]
-            actual_hash = sha256_file(path)
-
-            if actual_hash != expected_hash:
-                return False
-        return True
-    def check_module(window):
-        root_dir = Path(__file__).resolve().parent
-        module_dir = root_dir / "Methods"
-
-        encrypted_manifest = module_dir / "manifest.dat"
-
-        # manifest only like python dict in memory
-        manifest = load_manifest_from_memory(encrypted_manifest)
-
-        if manifest is None:
-            log(window, "Manifest verification failed")
-            return False
-
-        if not verify_module(window, module_dir, manifest):
-            log(window, "Module verification failed")
-            return False
-
-        log(window, "Module verification successful")
-        return True
 #debri____________________________________________________________________
 def run_script(script, window):
     
@@ -375,7 +298,6 @@ def main():
     url_map  = {f"-WEB-{name}-": url   for name, url, _ in WEB_TOOLS}
 
     while True:
-        check_module(window)
         event, _ = window.read()
 
         if event in (sg.WIN_CLOSED, "-EXIT-", "q"):
