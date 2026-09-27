@@ -1,1 +1,4 @@
-
+Download the computer vision model you can from: https://github.com/sparkyniner/Netryx-Astra-V2-Geolocation-Tool/tree/main/models_mixvpr
+I took Netryx and integrated into the my project. 
+In future I will modify Netryx
+Respect to author of Netryx
