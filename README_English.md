@@ -13,6 +13,7 @@
 | 06 | Username | Methods/Username.py - Username search across multiple platforms (uses a database similar to Sherlock/WhatsMyName) |
 | 07 | Search engine | Methods/Search_engine.py - Quick access to search dorks and external OSINT services |
 | 08 | Interactive Board | Methods/InterActiveBoard.py - Link board for visualizing an investigation |
+| 09 | + Netryx Vision. Integrated local service for GeoOsint
 
 Plus a panel of quick links to external web tools (ZoomEye, DNSDumpster, Google Dorking, etc.).
 
@@ -62,31 +63,6 @@ pip install -r requirements.txt
 python OSINT.py
 ```
 
-## Project structure
-
-```
-.
-├── OSINT.py                  # Main window / launcher for all modules
-├── requirements.txt
-├── install.sh / install.bat  # Installation scripts
-├── run.sh / run.bat          # Launch scripts
-├── LICENSE
-└── Methods/
-    ├── db.py                 # Module 01
-    ├── Ip.py                 # Module 02
-    ├── mail.py                # Module 03
-    ├── phone_number.py        # Module 04
-    ├── Username.py            # Module 05
-    ├── Search_engine.py       # Module 06
-    ├── InterActiveBoard.py    # Module 07
-    ├── ua.txt                 # List of User-Agents
-    ├── proxies_http.txt       # List of HTTP proxies (optional)
-    ├── Logs/                  # Module logs/results (created automatically)
-    └── resources/
-        ├── data.json          # Site database for username search
-        ├── data.schema.json   # Schema for data.json
-        └── wmn.json           # Additional database (WhatsMyName-like)
-```
 
 ## Running a single module
 
@@ -97,19 +73,6 @@ source .venv/bin/activate
 python Methods/Ip.py
 ```
 
-## Publishing to GitHub
-
-The repository is ready to be published:
-
-```bash
-cd <project_folder>
-git init
-git add .
-git commit -m "Initial commit: Monolyth OSINT"
-git branch -M main
-git remote add origin <your_GitHub_repository_URL>
-git push -u origin main
-```
 
 ## Common issues
 
