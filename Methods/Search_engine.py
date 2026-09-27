@@ -63,19 +63,46 @@ ENGINES = [
     ("Bing",          "bing",      "https://www.bing.com/search?q={q}",             "GENERAL"),
     ("DuckDuckGo",    "ddg",       "https://duckduckgo.com/?q={q}",                 "GENERAL"),
     ("Startpage",     "startpage", "https://www.startpage.com/search?q={q}",        "GENERAL"),
+    ("Qwant",         "qwant",     "https://www.qwant.com/?q={q}",                  "GENERAL"),
+    ("Yandex(rus)",        "yandex",    "https://yandex.com/search/?text={q}",           "GENERAL"),
+    ("Mojeek",        "mojeek",    "https://www.mojeek.com/search?q={q}",           "GENERAL"),
+    ("Ecosia",        "ecosia",    "https://www.ecosia.org/search?q={q}",           "GENERAL"),
+    ("Swisscows",     "swisscow",   "https://swisscows.com/ru/web?query={q}",       "GENERAL"),
+    ("Kagi",          "kagi",       "https://kagi.com/search?q={q}",                "GENERAL"),
+    ("Startpage",     "startpage",  "https://www.startpage.com/sp/search?language=english&lui=english&t=device&query={q}&cat=web",   "GENERAL"),
+    ("eTools",        "etools",     "https://www.etools.ch/searchSubmit.do?query={q}",  "GENERAL"),
+    #GENERAL
+
     ("Shodan",        "shodan",    "https://www.shodan.io/search?query={q}",         "OSINT"),
     ("Censys",        "censys",    "https://search.censys.io/search?resource=hosts&q={q}", "OSINT"),
     ("ZoomEye",       "zoomeye",   "https://www.zoomeye.ai/searchResult?q={q}",     "OSINT"),
     ("GreyNoise",     "greynoise", "https://viz.greynoise.io/query/?gnql={q}",      "OSINT"),
-    ("Ahmia",         "ahmia",     "https://ahmia.fi/search/?q={q}&8fcfd8=a29a7f",                "DARKNET"),
+    #OSINT
+
+    ("Ahmia",         "ahmia",     "https://ahmia.fi/search/?q={q}&8fcfd8=a29a7f",   "DARKNET"),
+    #DARKNET
+
     ("Grep.app",      "grep",      "https://grep.app/search?q={q}",                 "CODE"),
     ("GitHub",        "github",    "https://github.com/search?q={q}",               "CODE"),
+    #CODE
+
     ("Pastebin",      "pastebin",  "https://pastebin.com/search?q={q}",             "LEAKS"),
     ("IntelX",        "intelx",    "https://intelx.io/?s={q}",                      "LEAKS"),
     ("Have I Pwned",  "hibp",      "https://haveibeenpwned.com/account/{q}",        "LEAKS"),
+    #LEAKS
+
     ("Wayback",       "wayback",   "https://web.archive.org/web/*/{q}",             "ARCHIVE"),
     ("CachedView",    "cached",    "https://cachedview.nl/",                         "ARCHIVE"),
-    ("Yandex",        "yandex",    "https://yandex.com/search/?text={q}",           "GENERAL"),
+    ("Eyedex",        "eyedex",    "https://www.eyedex.org/search/?q={q}f&t=",      "ARCHIVE"),
+    ("Searchfiles.de", "searchf",  "https://searchfiles.de/found.php?cx=%3Amndxoucsumw&cof=FORID%3A11&ie=UTF-8&as_q=&newwindow=1&q={q}&sa=Search&as_occt=any&as_qdr=all#gsc.tab=0&gsc.q={}&gsc.page=1",  "ARCHIVE"),
+    ("MediaFireTrend", "mediafire", "https://mediafiretrend.com/?q={q}&search=Search",  "ARCHIVE"),
+    ("de-digger",      "denigger",  "https://www.dedigger.com/#gsc.tab=0&gsc.q={q}&gsc.sort=",  "ARCHIVE"),
+    ("Schlog.me",      "schlog",  "https://scnlog.me/?s={q}&category_name=0",  "ARCHIVE")
+
+    #ARCHIVE
+
+
+
 ]
 
 CATEGORIES = ["ALL", "GENERAL", "OSINT", "CODE", "LEAKS", "ARCHIVE", "DARKNET"]
@@ -85,23 +112,27 @@ CATEGORIES = ["ALL", "GENERAL", "OSINT", "CODE", "LEAKS", "ARCHIVE", "DARKNET"]
 
 BASE_DIR = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
 
-BROWSERS = [
-    ("Firefox",   "firefox",   str(BASE_DIR / "browser" / "FirefoxPortable" / "FirefoxPortable.exe")),   # fill paths as needed
-    ("Chromium",  "chromium",  str(BASE_DIR / "browser" / "GoogleChromePortable" / "GoogleChromePortable.exe")),
-    ("Tor",       "tor",       str(BASE_DIR / "browser" / "TorPortable" / "TorPortable" / "firefox.exe")), 
-    ("InteractiveBoard", "Board",   str(BASE_DIR / "browser" / "InterActiveBoard.py")), # system default
-]
+
 
 
 #быстрый запуск
 #Add your own programs here:
 #("Label",  r"C:\path\to\program.exe",  "Short description")
-PROGRAMS = [
-    ("Nmap",        r"",   "Port scanner"),
-    ("Metasploit",  r"",   "Exploit framework"),
-    ("Burp Suite",  r"",   "Web proxy / scanner"),
-    ("CyberChef",   r"", "Data transform tool"),
-    ("Maltego",     r"",   "OSINT visualiser"),
+WEB_TOOLS = [
+    ("Google images",    "https://images.google.com/", "International"),
+    ("Bing images",     "https://www.bing.com/images", "International"),
+    ("Yandex Images",     "https://yandex.com/images", "Russia"),
+    ("Baidu images",    "https://image.baidu.com/", "China"),
+    ("Imgur",        "https://imgur.com/", ""),
+    ("Flick",        "https://www.flickr.com/", "Social Media photo"),
+    ("TinEYE",       "https://www.tineye.com/",  "International"),
+    ("Pimeyes",      "https://pimeyes.com/en", "People faces specialized"),
+    ("Yippy",        "https://yippy.com/", "Community Builders for the Intelligence Age"),
+    ("Dataset Search",  "https://datasetsearch.research.google.com/",   "Google dataset search engine"),
+    ("GlobalSprc",    "https://www.globalspec.com/",   "Search engineering materials")
+    
+
+
 ]
 
 
@@ -161,47 +192,6 @@ def open_single(name, url_tpl, query, window):
 
 
 #запуск браузера
-def launch_browser(label, path, window):
-    if label == "Default" or not path:
-        log(window, "Opening system default browser…")
-        webbrowser.open("about:blank")
-        return
-    if path.startswith("http"):
-        webbrowser.open(path)
-        return
-    if not os.path.exists(path):
-        log_err(window, f"Browser not found: {path}")
-        set_status(window, "NOT FOUND", DANGER)
-        return
-    try:
-        subprocess.Popen([path])
-        log_ok(window, f"{label} launched.")
-        set_status(window, f"{label.upper()} OPEN", SUCCESS)
-    except Exception as e:
-        log_err(window, f"{label}: {e}")
-        set_status(window, "ERROR", DANGER)
-
-
-def launch_program(label, path, window):
-    if not path:
-        log_err(window, f"Path not configured for {label}.")
-        set_status(window, "NO PATH SET", WARN)
-        return
-    if path.startswith("http"):
-        webbrowser.open(path)
-        log_ok(window, f"{label} opened in browser.")
-        return
-    if not os.path.exists(path):
-        log_err(window, f"Not found: {path}")
-        set_status(window, "NOT FOUND", DANGER)
-        return
-    try:
-        subprocess.Popen([path])
-        log_ok(window, f"{label} launched.")
-        set_status(window, f"{label.upper()} RUNNING", SUCCESS)
-    except Exception as e:
-        log_err(window, f"{label}: {e}")
-        set_status(window, "ERROR", DANGER)
 
 
 
@@ -225,6 +215,21 @@ def engine_row(name, key, url_tpl, category):
                   size=(3, 1), pad=(2, 2),
                   tooltip=f"Open {name} now"),
     ]
+
+def make_web_tools():
+        rows = [[
+        sg.Text(f"  ◈  {name}", font=FONT_LABEL, text_color=ACCENT3,
+                background_color=PANEL, size=(16,1)),
+        sg.Text(desc, font=FONT_MONO_S, text_color=TEXT_DIM,
+                background_color=PANEL, expand_x=False),
+        sg.Button("↗ OPEN", key=f"-WEB-{name}-", font=FONT_MONO_S,
+                  button_color=(ACCENT3, PANEL), border_width=2, pad=(4,2))
+    ] for name, url, desc in WEB_TOOLS]
+
+        return sg.Frame(" GeoOSINT ", rows,
+                    font=FONT_LABEL, title_color=ACCENT2,
+                    background_color=PANEL, border_width=1,
+                    relief=sg.RELIEF_FLAT, expand_x=True, pad=(0,4))
 
 #layout
 def build_layout():
@@ -281,55 +286,9 @@ def build_layout():
        border_width=1, relief=sg.RELIEF_FLAT,
        expand_x=True, pad=(0, 4))
 
-    #Browser launchers
-    browser_rows = [[
-        sg.Text(f"  ◈  {label}", font=FONT_LABEL, text_color=ACCENT3,
-                background_color=PANEL, size=(12, 1)),
-        sg.Input(default_text=path, key=f"-BRPATH-{key}-",
-                 font=FONT_MONO_S, size=(32, 1),
-                 background_color=BG2, text_color=TEXT_BRIGHT,
-                 border_width=1),
-        sg.FileBrowse("…", font=FONT_MONO_S,
-                      button_color=(TEXT_DIM, BORDER),
-                      target=f"-BRPATH-{key}-",
-                      file_types=(("Executables", "*.exe"),("All","*.*")),
-                      pad=(2, 2)),
-        sg.Button("▶ OPEN", key=f"-BR-{key}-", font=FONT_MONO_S,
-                  button_color=(TEXT_BRIGHT, ACCENT1), border_width=0,
-                  pad=(6, 2)),
-    ] for label, key, path in BROWSERS]
-
-    browser_panel = sg.Frame("  ◈ BROWSER LAUNCHERS ", browser_rows,
-                             font=FONT_LABEL, title_color=ACCENT2,
-                             background_color=PANEL, border_width=1,
-                             relief=sg.RELIEF_FLAT, expand_x=True, pad=(0, 4))
-
-    #Programs panel
-    prog_rows = [[
-        sg.Text(f"  ◈  {label}", font=FONT_LABEL, text_color=ACCENT3,
-                background_color=PANEL, size=(12, 1)),
-        sg.Text(desc, font=FONT_MONO_S, text_color=TEXT_DIM,
-                background_color=PANEL, size=(22, 1)),
-        sg.Input(default_text=path, key=f"-PROGPATH-{label}-",
-                 font=FONT_MONO_S, size=(20, 1),
-                 background_color=BG2, text_color=TEXT_BRIGHT,
-                 border_width=1),
-        sg.FileBrowse("…", font=FONT_MONO_S,
-                      button_color=(TEXT_DIM, BORDER),
-                      target=f"-PROGPATH-{label}-",
-                      file_types=(("Executables","*.exe"),("All","*.*")),
-                      pad=(2, 2)),
-        sg.Button("▶", key=f"-PROG-{label}-", font=FONT_MONO_S,
-                  button_color=(TEXT_BRIGHT, ACCENT2), border_width=0,
-                  size=(3, 1), pad=(4, 2)),
-    ] for label, path, desc in PROGRAMS]
-
-    prog_panel = sg.Frame("  ◈ QUICK LAUNCH ", prog_rows,
-                          font=FONT_LABEL, title_color=ACCENT2,
-                          background_color=PANEL, border_width=1,
-                          relief=sg.RELIEF_FLAT, expand_x=True, pad=(0, 4))
 
     #Console
+
     console = sg.Frame("  ◈ CONSOLE OUTPUT ", [
         [sg.Multiline(
             default_text=(
@@ -379,8 +338,7 @@ def build_layout():
        vertical_scroll_only=True, size=(None, 720))
 
     right = sg.Column([
-        [browser_panel],
-        [prog_panel],
+        [make_web_tools()],
         [console],
     ], background_color=BG, expand_x=True, expand_y=True,
        pad=((6, 10), (8, 8)))
@@ -409,8 +367,6 @@ def main():
     )
     # maps
     open_map   = {f"-OPEN-{k}-":  (n, u) for n, k, u, _ in ENGINES}
-    br_map     = {f"-BR-{k}-":    (l, k)  for l, k, _ in BROWSERS}
-    prog_map   = {f"-PROG-{l}-":  (l,)    for l, _, _ in PROGRAMS}
 
     while True:
         event, values = window.read()
@@ -457,26 +413,6 @@ def main():
         elif event == "-CLR_ALL-":
             for _, key, _, _ in ENGINES:
                 window[f"-CHK-{key}-"].update(value=False)
-
-        #Browser launchers
-        elif event in br_map:
-            label, key = br_map[event]
-            path = values.get(f"-BRPATH-{key}-", "").strip()
-            threading.Thread(
-                target=launch_browser,
-                args=(label, path, window),
-                daemon=True,
-            ).start()
-
-        #Program launchers
-        elif event in prog_map:
-            label = prog_map[event][0]
-            path = values.get(f"-PROGPATH-{label}-", "").strip()
-            threading.Thread(
-                target=launch_program,
-                args=(label, path, window),
-                daemon=True,
-            ).start()
 
         #Clear log
         elif event == "-CLEAR-":

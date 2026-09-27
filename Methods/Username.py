@@ -74,6 +74,34 @@ STATIC_SITES = [
     ("GitHub",      "https://github.com/{u}"),
     ("Behance",     "https://www.behance.net/{u}"),
     ("Bandcamp",    "https://bandcamp.com/{u}"),
+    ("300+ SNS",    "https://cse.google.com/cse?key=AIzaSyB2lwQuNzUsRTH-49FA7od4dB_Xvu5DCvg&cx=001794496531944888666:iyxger-cwug&q={u}"),
+    ("Telegago",    "https://cse.google.com/cse?cx=006368593537057042503:efxu7xprihg#gsc.tab=0&gsc.q={u}&gsc.sort=date")
+
+]
+
+
+#GOOGLEDORKS = [
+
+#]
+# dorks List for search 
+
+WEB_TOOLS = [
+    ("Blogging Fusion",      "https://www.bloggingfusion.com/",                   "Blog Search"),
+    ("IntelX for Telegram",  "https://intelx.io/tools?tab=telegram",                  "Telegram search "),
+    ("WhatsMyName Web",      "https://whatsmyname.app/",                   "Username search on multiple platforms"),
+    ("4plebs",  "https://4plebs.org/", "4chan archive"),
+    ("192.com", "https://www.192.com/", "People searchin UK"),
+    ("Person Lookup", "https://personlookup.co.za/", "South Africa's fastest telephone & address search. "),
+    ("SearchSystems", "https://www.searchsystems.net/", "The Free Public Records Directory"),
+    ("WorldWide OSINT map", "https://cybdetective.com/osintmap/", "#1 by my grade" )
+
+]
+
+FACES_SEARCH_Images = [
+    ("Pinterest reverse search", "https://www.pinterest.com/", "Use pinterest to find faces"),
+    ("PicTriev", "https://www.pictriev.com/?lang=r", "Find look-alike celebrities on the web using the face recognition"),
+
+
 ]
 
 DEFAULT_USER_AGENT = (
@@ -375,6 +403,21 @@ BANNER = """\
    ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝
                      [ S E A R C H   M O D U L E ]"""
 
+def make_web_tools():
+    rows = [[
+        sg.Text(f"  ◈  {name}", font=FONT_LABEL, text_color=ACCENT3,
+                background_color=PANEL, size=(16,1)),
+        sg.Text(desc, font=FONT_MONO_S, text_color=TEXT_DIM,
+                background_color=PANEL, expand_x=False),
+        sg.Button("↗ OPEN", key=f"-WEB-{name}-", font=FONT_MONO_S,
+                  button_color=(ACCENT3, PANEL), border_width=2, pad=(4,2))
+    ] for name, url, desc in WEB_TOOLS]
+
+    return sg.Frame("  ◈ WEB INSTRUMENTS ", rows,
+                    font=FONT_LABEL, title_color=ACCENT2,
+                    background_color=PANEL, border_width=1,
+                    relief=sg.RELIEF_FLAT, expand_x=True, pad=(0,4))
+
 def build_layout():
     #Header 
     header = [
@@ -511,6 +554,7 @@ def build_layout():
         [sites_col, console_col],
         [sg.HorizontalSeparator(color=ACCENT2, pad=(0, 2))],
         statusbar,
+        [make_web_tools()],
     ]
     return layout
 

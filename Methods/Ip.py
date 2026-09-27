@@ -136,6 +136,12 @@ def run_ip(ip, window):
         f'https://www.google.com/search?q="{ip}"+filetype:conf',
     ]
 
+
+    #GOOGLEDORKS = [
+
+#]
+# dorks List for search 
+
     log(window, "─" * 55)
     log_warn(window, f"Generated {len(dork_links)} dork/recon links:")
     for link in dork_links:

@@ -85,6 +85,21 @@ MESSENGER_LINKS = [
 ]
 
 
+
+#GOOGLEDORKS = [
+
+#]
+# dorks List for search 
+
+
+WEB_TOOLS = [
+    ("Epios",      "https://epieos.com/",                   "The ultimate OSINT tool for email and phone reverse lookup"),
+    ("DNSDumpster",  "https://dnsdumpster.com",                  "DNS recon & record lookup"),
+    ("Google Dig",   "https://toolbox.googleapps.com/apps/dig/", "Authoritative DNS queries"),
+    ("OSINT Guide",  "https://github.com/OffcierCia/non-typical-OSINT-guide", "Non-typical OSINT guide"),
+]
+
+
 #scan logic
 def run_scan(phone, window):
     _log(window, f"TARGET  >>>  {phone}", ACCENT3)
@@ -173,6 +188,23 @@ BANNER = """\
   ██║     ██║  ██║╚██████╔╝██║ ╚████║███████╗
   ╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
          [ N U M B E R   O S I N T ]"""
+
+
+
+def make_web_tools():
+    rows = [[
+        sg.Text(f"  ◈  {name}", font=FONT_LABEL, text_color=ACCENT3,
+                background_color=PANEL, size=(16,1)),
+        sg.Text(desc, font=FONT_MONO_S, text_color=TEXT_DIM,
+                background_color=PANEL, expand_x=True),
+        sg.Button("↗ OPEN", key=f"-WEB-{name}-", font=FONT_MONO_S,
+                  button_color=(ACCENT3, PANEL), border_width=1, pad=(4,2)),
+    ] for name, url, desc in WEB_TOOLS]
+
+    return sg.Frame("  ◈ WEB INSTRUMENTS ", rows,
+                    font=FONT_LABEL, title_color=ACCENT2,
+                    background_color=PANEL, border_width=1,
+                    relief=sg.RELIEF_FLAT, expand_x=True, pad=(0,4))
 
 
 def info_row(label, key, value="—", val_color=TEXT):
@@ -315,6 +347,7 @@ def build_layout():
         [info_card, console],
         [sg.HorizontalSeparator(color=ACCENT2, pad=(0, 2))],
         statusbar,
+        [make_web_tools()]
     ]
     return layout
 
