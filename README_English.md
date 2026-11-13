@@ -1,4 +1,5 @@
-# Monolyth OSINT
+# Monolyth OSINT x Netryx Astra 2.0 update
+Netryx Astra 2.0 was integrated in project for GEO OSINT
 
 > ⚠️ **Disclaimer.** This tool is intended solely for lawful activities: conducting your own OSINT research, security testing of resources you own, journalistic investigations, education, and similar legitimate purposes, with the data owner's consent where required by law. The user bears full responsibility for complying with the laws of their country when using this program. Do not use this tool for stalking, surveillance, or any other violation of people's privacy without a lawful basis.
 
